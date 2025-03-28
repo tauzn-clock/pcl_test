@@ -50,12 +50,3 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
-
-WORKDIR /
-RUN mkdir -p /catkin_ws/src
-RUN cd /catkin/src 
-RUN git clone https://github.com/tauzn-clock/pcl_test
-RUN cd /catkin_ws
-RUN catkin init
-RUN catkin build
-RUN echo "source /catkin_ws/devel/setup.bash" >> ~/.bashrc
