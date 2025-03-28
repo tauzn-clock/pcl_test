@@ -8,10 +8,10 @@
 
 int W;
 int H;
-double fx;
-double fy;
-double cx;
-double cy;
+float fx;
+float fy;
+float cx;
+float cy;
 
 ros::Publisher cloud_pub;
 
@@ -42,12 +42,12 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     cloud.width = W;
     cloud.height = H;
     cloud.is_dense = false;
-
+    cloud.points.resize (W*H);
+    
     // Fill in the cloud data
     pcl::PointCloud<pcl::PointXYZ> ::iterator pt_iter = cloud.begin ();
     for (int v = 0; v < (int)cloud.height; ++v)
     {
-        ROS_INFO("TEST");
         int depth_idx = 0;
         for (int u = 0; u < (int)cloud.width; ++u, ++depth_idx, ++pt_iter)
         {
@@ -62,8 +62,8 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
             }
             else // Fill in XYZ
             {
-                pt.x = ((double)u - cx) * Z * fx;
-                pt.y = ((double)v - cy) * Z * fy;
+                pt.x = ((float)u - cx) * Z * fx;
+                pt.y = ((float)v - cy) * Z * fy;
                 pt.z = Z;
             }
         }
