@@ -5,6 +5,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+//#include <pcl/segmentation/organized_multi_plane_segmentation.h>
+#include <pcl/io/pcd_io.h>
 
 int W;
 int H;
@@ -41,41 +43,50 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     pcl::PointCloud<pcl::PointXYZ> cloud;
     cloud.width = W;
     cloud.height = H;
-    cloud.is_dense = false;
+    cloud.is_dense = true;
     cloud.points.resize (W*H);
     
     // Fill in the cloud data
     pcl::PointCloud<pcl::PointXYZ> ::iterator pt_iter = cloud.begin ();
+    int depth_idx = 0;
+
     for (int v = 0; v < (int)cloud.height; ++v)
     {
-        int depth_idx = 0;
-        for (int u = 0; u < (int)cloud.width; ++u, ++depth_idx, ++pt_iter)
+        for (int u = 0; u < (int)cloud.width; ++u, ++pt_iter)
         {
             pcl::PointXYZ& pt = *pt_iter;
-            float Z = msg->data[depth_idx];
-            ROS_INFO("Z: %.2f", Z);
 
-            // Check for invalid measurements
-            if (std::isnan (Z))
+            int Z_int;
+
+            if (msg->is_bigendian)
             {
-                pt.x = pt.y = pt.z = Z;
+                Z_int = (msg->data[depth_idx] << 8) + msg->data[depth_idx+1];
             }
-            else // Fill in XYZ
+            else
             {
-                pt.x = ((float)u - cx) * Z * fx;
-                pt.y = ((float)v - cy) * Z * fy;
-                pt.z = Z;
+                Z_int = msg->data[depth_idx] + (msg->data[depth_idx+1] << 8);
             }
+
+            float Z = 0.001 * Z_int;
+            depth_idx += 2; // Skip the second byte of the 16-bit depth value
+
+            pt.x = ((float)u - cx) * Z * fx / 100000.0;
+            pt.y = ((float)v - cy) * Z * fy / 100000.0;
+            pt.z = Z;
         }
     }
 
     ROS_INFO("Point Cloud Size: %zu", cloud.size());
 
-    // Convert to ROS data type
-    sensor_msgs::PointCloud2 output;
+    // Save the point cloud as a PLY file
+    pcl::io::savePCDFileASCII("/scratchdata/organised_pcd.pcd", cloud);
 
-    // Publish the data
-    cloud_pub.publish(output);
+    // Find planes using organised multiplane segmentation
+    //pcl::OrganizedMultiPlaneSegmentation<pcl::PointXYZ, pcl::Normal, pcl::Label> seg;
+    //seg.setInputCloud(cloud.makeShared());
+    //seg.segment();
+
+    // Publish the point cloud
 }
 
 int main(int argc, char** argv)
