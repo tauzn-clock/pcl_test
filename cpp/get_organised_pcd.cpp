@@ -13,6 +13,8 @@
 #include <pcl/features/integral_image_normal.h>
 
 #include "data_conversion.cpp"
+#include "hsv.cpp"
+#include <array>
 
 ros::Publisher cloud_pub, marker_array_pub;
 sensor_msgs::CameraInfo camera_info;
@@ -34,13 +36,13 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     ROS_INFO("Data Size: %zu", msg->data.size());
 
     // Create a point cloud
-    pcl::PointCloud<pcl::PointXYZ> cloud = DepthMsgToPointCloud(msg, camera_info);
+    pcl::PointCloud<pcl::PointXYZRGB> cloud = DepthMsgToPointCloud(msg, camera_info);
 
     ROS_INFO("Point Cloud Size: %zu", cloud.size());
 
     // Normal Estimate
     pcl::PointCloud<pcl::Normal> normal;
-    pcl::IntegralImageNormalEstimation<pcl::PointXYZ, pcl::Normal> ne_normals;
+    pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne_normals;
     ne_normals.setNormalEstimationMethod(ne_normals.COVARIANCE_MATRIX);
     ne_normals.setMaxDepthChangeFactor(0.1f);
     ne_normals.setNormalSmoothingSize(20.0f);
@@ -51,7 +53,7 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     // pcl::io::savePCDFileASCII("/scratchdata/organised_pcd.pcd", cloud);
 
     // Find planes using organised multiplane segmentation
-    pcl::OrganizedMultiPlaneSegmentation<pcl::PointXYZ, pcl::Normal, pcl::Label> seg;
+    pcl::OrganizedMultiPlaneSegmentation<pcl::PointXYZRGB, pcl::Normal, pcl::Label> seg;
     seg.setInputCloud(cloud.makeShared());
     seg.setInputNormals(normal.makeShared());
 
@@ -60,6 +62,26 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     std::vector<pcl::ModelCoefficients> models;
     seg.segment(models, cluster_indices);
     
+    // Print out the number of planes found
+    ROS_INFO("Number of planes found: %zu", models.size());
+    for(auto model : models)
+    {
+        ROS_INFO("Model Coefficients: %f %f %f %f", model.values[0], model.values[1], model.values[2], model.values[3]);
+    }
+
+    // Print out the number of indexes in each cluster
+    for(int i=0; i<cluster_indices.size(); i++)
+    {
+        ROS_INFO("Cluster %d Size: %zu", i, cluster_indices[i].indices.size());
+        std::array<float, 3> color = GetHSVColor(i, cluster_indices.size());
+        for (auto index : cluster_indices[i].indices)
+        {
+            cloud[index].r = (int)(color[0] * 255);
+            cloud[index].g = (int)(color[1] * 255);
+            cloud[index].b = (int)(color[2] * 255);
+        }
+    }
+
     // Publish the point cloud
     sensor_msgs::PointCloud2 cloud_msg;
     pcl::toROSMsg(cloud, cloud_msg);

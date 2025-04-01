@@ -1,4 +1,3 @@
-#include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -27,7 +26,7 @@ Eigen::Quaternionf NormalToQuaternion(const Eigen::Vector3f& normal)
     return quaternion;
 }
 
-pcl::PointCloud<pcl::PointXYZ> DepthMsgToPointCloud(const sensor_msgs::Image::ConstPtr& msg, sensor_msgs::CameraInfo camera_info){
+pcl::PointCloud<pcl::PointXYZRGB> DepthMsgToPointCloud(const sensor_msgs::Image::ConstPtr& msg, sensor_msgs::CameraInfo camera_info){
 
     float fx = camera_info.K[0];
     float fy = camera_info.K[4];
@@ -35,21 +34,21 @@ pcl::PointCloud<pcl::PointXYZ> DepthMsgToPointCloud(const sensor_msgs::Image::Co
     float cy = camera_info.K[5];
 
     // Create a point cloud
-    pcl::PointCloud<pcl::PointXYZ> cloud;
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
     cloud.width = msg->width;
     cloud.height = msg->height;
     cloud.is_dense = true;
     cloud.points.resize (msg->width*msg->height);
 
      // Fill in the cloud data
-    pcl::PointCloud<pcl::PointXYZ> ::iterator pt_iter = cloud.begin ();
+    pcl::PointCloud<pcl::PointXYZRGB> ::iterator pt_iter = cloud.begin ();
     int depth_idx = 0;
 
     for (int v = 0; v < (int)cloud.height; ++v)
     {
         for (int u = 0; u < (int)cloud.width; ++u, ++pt_iter)
         {
-            pcl::PointXYZ& pt = *pt_iter;
+            pcl::PointXYZRGB& pt = *pt_iter;
 
             int Z_int;
 
@@ -74,7 +73,7 @@ pcl::PointCloud<pcl::PointXYZ> DepthMsgToPointCloud(const sensor_msgs::Image::Co
     return cloud;
 }
 
-visualization_msgs::MarkerArray PointCloudWithNormalsToMarkerArray(const pcl::PointCloud<pcl::PointXYZ> cloud, const pcl::PointCloud<pcl::Normal> normal)
+visualization_msgs::MarkerArray PointCloudWithNormalsToMarkerArray(const pcl::PointCloud<pcl::PointXYZRGB> cloud, const pcl::PointCloud<pcl::Normal> normal)
 {
     assert(cloud.size() == normal.size());
 
@@ -83,7 +82,7 @@ visualization_msgs::MarkerArray PointCloudWithNormalsToMarkerArray(const pcl::Po
     // Iterate through each point in the point cloud
     for (size_t i = 0; i < cloud.size(); i+=100)
     {
-        pcl::PointXYZ point = cloud.at(i);
+        pcl::PointXYZRGB point = cloud.at(i);
         pcl::Normal norm = normal.at(i);
 
         if (isnan(norm.normal_x) || isnan(norm.normal_y) || isnan(norm.normal_z))
