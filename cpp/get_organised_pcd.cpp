@@ -51,9 +51,14 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     // pcl::io::savePCDFileASCII("/scratchdata/organised_pcd.pcd", cloud);
 
     // Find planes using organised multiplane segmentation
-    // pcl::OrganizedMultiPlaneSegmentation<pcl::PointXYZ, pcl::Normal, pcl::Label> seg;
-    // seg.setInputCloud(cloud.makeShared());
-    // seg.segment();
+    pcl::OrganizedMultiPlaneSegmentation<pcl::PointXYZ, pcl::Normal, pcl::Label> seg;
+    seg.setInputCloud(cloud.makeShared());
+    seg.setInputNormals(normal.makeShared());
+
+    // Call segment function to obtain set of plane models in the input cloud
+    std::vector<pcl::PointIndices> cluster_indices;
+    std::vector<pcl::ModelCoefficients> models;
+    seg.segment(models, cluster_indices);
     
     // Publish the point cloud
     sensor_msgs::PointCloud2 cloud_msg;
@@ -62,8 +67,10 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     cloud_msg.header.stamp = ros::Time::now();
     cloud_pub.publish(cloud_msg);
 
+    /* Very computationally intensive to run, only do it for testing
     marker_array = PointCloudWithNormalsToMarkerArray(cloud, normal);
     marker_array_pub.publish(marker_array);
+    */
 }
 
 int main(int argc, char** argv)
