@@ -14,8 +14,9 @@
 
 #include "data_conversion.cpp"
 
-ros::Publisher cloud_pub;
+ros::Publisher cloud_pub, marker_array_pub;
 sensor_msgs::CameraInfo camera_info;
+visualization_msgs::MarkerArray marker_array;
 
 void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg)
 {
@@ -38,13 +39,13 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     ROS_INFO("Point Cloud Size: %zu", cloud.size());
 
     // Normal Estimate
-    pcl::PointCloud<pcl::Normal> normals;
+    pcl::PointCloud<pcl::Normal> normal;
     pcl::IntegralImageNormalEstimation<pcl::PointXYZ, pcl::Normal> ne_normals;
     ne_normals.setNormalEstimationMethod(ne_normals.COVARIANCE_MATRIX);
     ne_normals.setMaxDepthChangeFactor(0.1f);
     ne_normals.setNormalSmoothingSize(20.0f);
     ne_normals.setInputCloud(cloud.makeShared());
-    ne_normals.compute(normals);
+    ne_normals.compute(normal);
 
     // Save the point cloud as a PLY file
     // pcl::io::savePCDFileASCII("/scratchdata/organised_pcd.pcd", cloud);
@@ -60,6 +61,9 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     cloud_msg.header.frame_id = "map";
     cloud_msg.header.stamp = ros::Time::now();
     cloud_pub.publish(cloud_msg);
+
+    marker_array = PointCloudWithNormalsToMarkerArray(cloud, normal);
+    marker_array_pub.publish(marker_array);
 }
 
 int main(int argc, char** argv)
@@ -74,6 +78,7 @@ int main(int argc, char** argv)
     ros::Subscriber depth_image_sub = nh.subscribe("/camera/depth/image_raw", 10, depthImageCallback);
 
     cloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/camera/organised_pcd", 1);
+    marker_array_pub = nh.advertise<visualization_msgs::MarkerArray>("/camera/organised_pcd_normals", 1);
 
     // Spin to keep the node alive
     ros::spin();
