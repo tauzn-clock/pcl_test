@@ -1,0 +1,8 @@
+normal_max_depth_change_factor: 0.1
+normal_normal_smoothing_size: 10.0
+normal_visualise: false
+
+segment_min_inliers: 5000
+segment_angular_threshold: 0.05
+segment_distance_threshold: 0.05
+segment_maximum_curvature: 0.01

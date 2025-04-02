@@ -1,0 +1,4 @@
+<launch>
+  <!-- Launch the camera info subscriber node -->
+  <node name="test" pkg="plane_detection" type="get_ahc_pcd" output="screen" />
+</launch>
