@@ -58,6 +58,11 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     pcl::OrganizedMultiPlaneSegmentation<pcl::PointXYZRGB, pcl::Normal, pcl::Label> seg;
     seg.setInputCloud(cloud.makeShared());
     seg.setInputNormals(normal.makeShared());
+    seg.setMinInliers(config["segment_min_inliers"].as<int>());
+    seg.setAngularThreshold(config["segment_angular_threshold"].as<float>());
+    seg.setDistanceThreshold(config["segment_distance_threshold"].as<float>());
+    seg.setMaximumCurvature(config["segment_maximum_curvature"].as<float>());
+
 
     // Call segment function to obtain set of plane models in the input cloud
     std::vector<pcl::PointIndices> cluster_indices;
