@@ -15,10 +15,12 @@
 #include "data_conversion.cpp"
 #include "hsv.cpp"
 #include <array>
+#include <yaml-cpp/yaml.h>
 
 ros::Publisher cloud_pub, marker_array_pub;
 sensor_msgs::CameraInfo camera_info;
 visualization_msgs::MarkerArray marker_array;
+YAML::Node config;
 
 void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg)
 {
@@ -44,8 +46,8 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     pcl::PointCloud<pcl::Normal> normal;
     pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne_normals;
     ne_normals.setNormalEstimationMethod(ne_normals.COVARIANCE_MATRIX);
-    ne_normals.setMaxDepthChangeFactor(0.1f);
-    ne_normals.setNormalSmoothingSize(20.0f);
+    ne_normals.setMaxDepthChangeFactor(config["normal_max_depth_change_factor"].as<float>());
+    ne_normals.setNormalSmoothingSize(config["normal_normal_smoothing_size"].as<float>());
     ne_normals.setInputCloud(cloud.makeShared());
     ne_normals.compute(normal);
 
@@ -89,14 +91,20 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     cloud_msg.header.stamp = ros::Time::now();
     cloud_pub.publish(cloud_msg);
 
-    /* Very computationally intensive to run, only do it for testing
-    marker_array = PointCloudWithNormalsToMarkerArray(cloud, normal);
-    marker_array_pub.publish(marker_array);
-    */
+    /* Very computationally intensive to run, only do it for testing */
+    if (config["normal_visualise"].as<bool>())
+    {
+        visualization_msgs::MarkerArray marker_array = PointCloudWithNormalsToMarkerArray(cloud, normal);
+        marker_array_pub.publish(marker_array);
+    }
 }
 
 int main(int argc, char** argv)
 {
+    std::cout << argv[1] << std::endl;
+
+    config = YAML::LoadFile("/catkin_ws/src/pcl_test/cpp/organised.yaml");
+
     // Initialize ROS
     ros::init(argc, argv, "get_organised_pcd");
 

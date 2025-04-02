@@ -9,6 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
 )
 
+# Find the YAML-CPP library (for YAML support)
+find_package(yaml-cpp REQUIRED)
+
 # Declare a catkin package
 catkin_package()
 
@@ -23,4 +26,5 @@ add_executable(get_organised_pcd cpp/get_organised_pcd.cpp)
 # Link the executable to the necessary libraries
 target_link_libraries(get_organised_pcd
   ${catkin_LIBRARIES}
+  yaml-cpp
 )
