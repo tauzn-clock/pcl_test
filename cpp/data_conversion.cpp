@@ -15,12 +15,11 @@
 
 Eigen::Quaternionf NormalToQuaternion(const Eigen::Vector3f& normal)
 {
-    // TODO: This is obviously wrong,
-    // there is some weird interaction over the definiton of the z axis in the optical frame and rviz, 
-    //for now this is good enough for visualisation, but need more testing for relative normal
-    Eigen::Vector3f z_axis(1, 0, 0); 
-    Eigen::Vector3f axis = z_axis.cross(normal);
-    float angle = acos(z_axis.dot(normal));
+    Eigen::Vector3f x_axis(1, 0, 0); 
+    Eigen::Vector3f axis = x_axis.cross(normal);
+    float angle = acos(x_axis.dot(normal));
+
+    // Starting angle from x-axis to normal
     Eigen::Quaternionf quaternion(Eigen::AngleAxisf(angle, axis));
     quaternion.normalize();
     return quaternion;
