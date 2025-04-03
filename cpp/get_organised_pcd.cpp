@@ -67,7 +67,11 @@ void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg)
     // Call segment function to obtain set of plane models in the input cloud
     std::vector<pcl::PointIndices> cluster_indices;
     std::vector<pcl::ModelCoefficients> models;
-    seg.segment(models, cluster_indices);
+    pcl::PointCloud<pcl::Label> labels;
+    std::vector<pcl::PointIndices> label_indices;
+    std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> > centroids;
+    std::vector <Eigen::Matrix3f, Eigen::aligned_allocator<Eigen::Matrix3f> > covariances;
+    seg.segment(models, cluster_indices,centroids, covariances, labels, label_indices);
     
     // Print out the number of planes found
     ROS_INFO("Number of planes found: %zu", models.size());
