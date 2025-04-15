@@ -6,7 +6,14 @@ import numpy as np
 import cv2
 from cv_bridge import CvBridge
 
-DESTINATION_DIR = "/scratchdata/processed/corridor"
+DESTINATION_DIR = '/scratchdata/processed_data'"
+
+if not os.path.exists(DESTINATION_DIR):
+    os.makedirs(DESTINATION_DIR)
+if not os.path.exists(os.path.join(DESTINATION_DIR, "rgb")):
+    os.makedirs(os.path.join(DESTINATION_DIR, "rgb"))
+if not os.path.exists(os.path.join(DESTINATION_DIR, "depth")):
+    os.makedirs(os.path.join(DESTINATION_DIR, "depth"))
 
 # Open the rosbag file
 bag = rosbag.Bag('/scratchdata/corridor.bag', 'r')
@@ -38,11 +45,30 @@ for topic, msg, t in bag.read_messages(topics=['/camera/depth/image_raw']):
 print(len(rgb))
 print(len(depth))
 
+pt = 0
 for i in range(len(rgb)):
-    cv2.imwrite(os.path.join(DESTINATION_DIR, f'rgb/{i}.png'), rgb[i][0])
+    closest = abs(rgb[i][1] - depth[pt][1])
+    best_match = pt
+    pt+=1
+    while pt < len(depth):
+        if abs(rgb[i][1] - depth[pt][1]) < closest:
+            best_match = pt
+            closest = abs(rgb[i][1] - depth[pt][1])
+            pt += 1
+        else:
+            break
+    
+    rgb_img = rgb[i][0]
+    depth_img = depth[best_match][0]
 
-for i in range(len(depth)):
-    cv2.imwrite(os.path.join(DESTINATION_DIR, f'depth/{i}.png'), depth[i][0])
+    # Save the RGB image
+    cv2.imwrite(os.path.join(DESTINATION_DIR, "rgb", f'{i}.png'), rgb_img)
+    # Save the depth image
+    depth_img = depth_img.astype(np.uint16)
+    cv2.imwrite(os.path.join(DESTINATION_DIR, "depth", f'{i}.png'), depth_img)   
+
+    pt = best_match + 1 
+
 
 # Close the ROS bag
 bag.close()
