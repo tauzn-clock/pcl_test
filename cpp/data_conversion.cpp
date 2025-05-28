@@ -63,8 +63,8 @@ pcl::PointCloud<pcl::PointXYZRGB> DepthMsgToPointCloud(const sensor_msgs::Image:
             float Z = 0.001 * Z_int;
             depth_idx += 2; // Skip the second byte of the 16-bit depth value
 
-            pt.x = ((float)u - cx) * Z * fx / 100000.0;
-            pt.y = ((float)v - cy) * Z * fy / 100000.0;
+            pt.x = ((float)u - cx) * Z / fx;
+            pt.y = ((float)v - cy) * Z / fy;
             pt.z = Z;
         }
     }
